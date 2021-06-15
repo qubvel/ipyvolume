@@ -169,101 +169,6 @@ uniform sampler2D colormap;
 
 
 void main(void) {
-    // we repeat threejs's shader, up to begin_vertex
-#if defined( AS_DEFAULT ) || defined( AS_COORDINATE )
-    #include <uv_vertex>
-	#include <uv2_vertex>
-	#include <color_vertex>
-
-	#include <beginnormal_vertex>
-	#include <morphnormal_vertex>
-	#include <skinbase_vertex>
-	#include <skinnormal_vertex>
-	#include <defaultnormal_vertex>
-
-	#include <begin_vertex>
-#endif //defined( AS_DEFAULT ) || defined( AS_COORDINATE )
-#ifdef AS_LAMBERT
-    #include <uv_vertex>
-	#include <uv2_vertex>
-	#include <color_vertex>
-
-	#include <beginnormal_vertex>
-	#include <morphnormal_vertex>
-	#include <skinbase_vertex>
-	#include <skinnormal_vertex>
-	#include <defaultnormal_vertex>
-
-	#include <begin_vertex>
-#endif //AS_LAMBERT
-#ifdef AS_PHONG
-	#include <uv_vertex>
-	#include <uv2_vertex>
-	#include <color_vertex>
-
-	#include <beginnormal_vertex>
-	#include <morphnormal_vertex>
-	#include <skinbase_vertex>
-	#include <skinnormal_vertex>
-	#include <defaultnormal_vertex>
-
-    #ifndef FLAT_SHADED // Normal computed with derivatives when FLAT_SHADED
-	    vNormal = normalize( transformedNormal );
-    #endif
-
-	#include <begin_vertex>
-#endif //AS_PHONG
-#ifdef AS_PHYSICAL
-	#include <uv_vertex>
-	#include <uv2_vertex>
-	#include <color_vertex>
-
-	#include <beginnormal_vertex>
-	#include <morphnormal_vertex>
-	#include <skinbase_vertex>
-	#include <skinnormal_vertex>
-	#include <defaultnormal_vertex>
-
-    #ifndef FLAT_SHADED // Normal computed with derivatives when FLAT_SHADED
-	    vNormal = normalize( transformedNormal );
-    #endif
-
-	#include <begin_vertex>
-#endif //AS_PHYSICAL
-#ifdef AS_DEPTH
-	#include <uv_vertex>
-
-	#include <skinbase_vertex>
-
-	#ifdef USE_DISPLACEMENTMAP
-
-		#include <beginnormal_vertex>
-		#include <morphnormal_vertex>
-		#include <skinnormal_vertex>
-
-	#endif
-
-	#include <begin_vertex>
-#endif //AS_DEPTH
-#ifdef AS_DISTANCE
-	#include <uv_vertex>
-
-	#include <skinbase_vertex>
-
-	#ifdef USE_DISPLACEMENTMAP
-
-		#include <beginnormal_vertex>
-		#include <morphnormal_vertex>
-		#include <skinnormal_vertex>
-
-	#endif
-
-	#include <begin_vertex>
-#endif //AS_DISTANCE
-
-    // after begin_vertex, we modify transformed
-
-
     vec3 animation_time = vec3(animation_time_x, animation_time_y, animation_time_z);
     vec3 animation_time_v = vec3(animation_time_vx, animation_time_vy, animation_time_vz);
 
@@ -300,19 +205,117 @@ void main(void) {
     SHADER_SNIPPET_SIZE;
     //vec3 pos = (pos_object ) / size;// - 0.5;
     #ifdef USE_SPRITE
-        // if we are a sprite, we add the position in view coordinates, and need to 
+        // if we are a sprite, we add the position in view coordinates, and need to
         vec4 view_pos = modelViewMatrix * vec4(model_pos, 1.0);
         view_pos += vec4((position.xy)*(s*0.5),0,0);
     #else
-        // the position is the orignal mesh position, so we scale and add that to the centrol location
+        // the position is the orignal mesh position, so we scale and add that to the central location
         // and we also rotate it into the direction of the vector v
         vec4 position_transformed = geo_matrix * vec4(position, 1.0);
         position_transformed.xyz = position_transformed.xyz / position_transformed.w;
         model_pos += move_to_vector * (position_transformed.xyz*size_vector);
         vec4 view_pos = viewMatrix * vec4(model_pos, 1.0);
     #endif
-    transformed = model_pos;
 #endif
+
+    // we repeat threejs's shader, up to begin_vertex
+#if defined( AS_DEFAULT ) || defined( AS_COORDINATE )
+    #include <uv_vertex>
+    #include <uv2_vertex>
+    #include <color_vertex>
+
+    #include <beginnormal_vertex>
+    #include <morphnormal_vertex>
+    #include <skinbase_vertex>
+    #include <skinnormal_vertex>
+    #include <defaultnormal_vertex>
+
+    #include <begin_vertex>
+#endif //defined( AS_DEFAULT ) || defined( AS_COORDINATE )
+#ifdef AS_LAMBERT
+    #include <uv_vertex>
+    #include <uv2_vertex>
+    #include <color_vertex>
+
+    #include <beginnormal_vertex>
+    objectNormal = move_to_vector * objectNormal;
+    #include <morphnormal_vertex>
+    #include <skinbase_vertex>
+    #include <skinnormal_vertex>
+    #include <defaultnormal_vertex>
+
+    #include <begin_vertex>
+#endif //AS_LAMBERT
+#ifdef AS_PHONG
+    #include <uv_vertex>
+    #include <uv2_vertex>
+    #include <color_vertex>
+
+    #include <beginnormal_vertex>
+    objectNormal = move_to_vector * objectNormal;
+    #include <morphnormal_vertex>
+    #include <skinbase_vertex>
+    #include <skinnormal_vertex>
+    #include <defaultnormal_vertex>
+
+    #ifndef FLAT_SHADED // Normal computed with derivatives when FLAT_SHADED
+        vNormal = normalize( transformedNormal );
+    #endif
+
+    #include <begin_vertex>
+#endif //AS_PHONG
+#ifdef AS_PHYSICAL
+    #include <uv_vertex>
+    #include <uv2_vertex>
+    #include <color_vertex>
+
+    #include <beginnormal_vertex>
+    objectNormal = move_to_vector * objectNormal;
+    #include <morphnormal_vertex>
+    #include <skinbase_vertex>
+    #include <skinnormal_vertex>
+    #include <defaultnormal_vertex>
+
+    #ifndef FLAT_SHADED // Normal computed with derivatives when FLAT_SHADED
+        vNormal = normalize( transformedNormal );
+    #endif
+
+    #include <begin_vertex>
+#endif //AS_PHYSICAL
+#ifdef AS_DEPTH
+    #include <uv_vertex>
+
+    #include <skinbase_vertex>
+
+    #ifdef USE_DISPLACEMENTMAP
+
+        #include <beginnormal_vertex>
+        #include <morphnormal_vertex>
+        #include <skinnormal_vertex>
+
+    #endif
+
+    #include <begin_vertex>
+#endif //AS_DEPTH
+#ifdef AS_DISTANCE
+    #include <uv_vertex>
+
+    #include <skinbase_vertex>
+
+    #ifdef USE_DISPLACEMENTMAP
+
+        #include <beginnormal_vertex>
+        #include <morphnormal_vertex>
+        #include <skinnormal_vertex>
+
+    #endif
+
+    #include <begin_vertex>
+#endif //AS_DISTANCE
+
+    // after begin_vertex, we modify transformed
+    transformed = model_pos;
+
     // mvPosition = view_pos;
     gl_Position = projectionMatrix * view_pos;
     // vec3 positionEye = ( modelViewMatrix * vec4( model_pos, 1.0 ) ).xyz;
@@ -335,80 +338,80 @@ void main(void) {
 
 
 #if defined( AS_DEFAULT ) || defined( AS_COORDINATE )
-	#include <morphtarget_vertex>
-	#include <skinning_vertex>
-	#include <displacementmap_vertex>
-	#include <project_vertex>
-	#include <logdepthbuf_vertex>
-	#include <clipping_planes_vertex>
+    #include <morphtarget_vertex>
+    #include <skinning_vertex>
+    #include <displacementmap_vertex>
+    #include <project_vertex>
+    #include <logdepthbuf_vertex>
+    #include <clipping_planes_vertex>
 
 
-	#include <worldpos_vertex>
+    #include <worldpos_vertex>
     vec3 positionEye = ( modelViewMatrix * vec4(transformed, 1.0 ) ).xyz;
     vertex_position = positionEye;
-	// vViewPosition = - mvPosition.xyz;
-	// #include <envmap_vertex>
-	#include <shadowmap_vertex>
-	#include <fog_vertex>    
+    // vViewPosition = - mvPosition.xyz;
+    // #include <envmap_vertex>
+    #include <shadowmap_vertex>
+    #include <fog_vertex>    
 #endif // defined( AS_DEFAULT ) || defined( AS_COORDINATE )
 #ifdef AS_LAMBERT
-	#include <morphtarget_vertex>
-	#include <skinning_vertex>
-	#include <project_vertex>
-	#include <logdepthbuf_vertex>
-	#include <clipping_planes_vertex>
+    #include <morphtarget_vertex>
+    #include <skinning_vertex>
+    #include <project_vertex>
+    #include <logdepthbuf_vertex>
+    #include <clipping_planes_vertex>
 
-	#include <worldpos_vertex>
-	#include <envmap_vertex>
-	#include <lights_lambert_vertex>
-	#include <shadowmap_vertex>
-	#include <fog_vertex>
+    #include <worldpos_vertex>
+    #include <envmap_vertex>
+    #include <lights_lambert_vertex>
+    #include <shadowmap_vertex>
+    #include <fog_vertex>
 #endif //AS_LAMBERT
 #ifdef AS_PHONG
-	#include <morphtarget_vertex>
-	#include <skinning_vertex>
-	#include <displacementmap_vertex>
-	#include <project_vertex>
-	#include <logdepthbuf_vertex>
-	#include <clipping_planes_vertex>
+    #include <morphtarget_vertex>
+    #include <skinning_vertex>
+    #include <displacementmap_vertex>
+    #include <project_vertex>
+    #include <logdepthbuf_vertex>
+    #include <clipping_planes_vertex>
 
-	vViewPosition = - mvPosition.xyz;
+    vViewPosition = - mvPosition.xyz;
 
-	#include <worldpos_vertex>
-	#include <envmap_vertex>
-	#include <shadowmap_vertex>
-	#include <fog_vertex>
+    #include <worldpos_vertex>
+    #include <envmap_vertex>
+    #include <shadowmap_vertex>
+    #include <fog_vertex>
 #endif //AS_PHONG
 #ifdef AS_PHYSICAL
-	#include <morphtarget_vertex>
-	#include <skinning_vertex>
-	#include <displacementmap_vertex>
-	#include <project_vertex>
-	#include <logdepthbuf_vertex>
-	#include <clipping_planes_vertex>
+    #include <morphtarget_vertex>
+    #include <skinning_vertex>
+    #include <displacementmap_vertex>
+    #include <project_vertex>
+    #include <logdepthbuf_vertex>
+    #include <clipping_planes_vertex>
 
-	vViewPosition = - mvPosition.xyz;
+    vViewPosition = - mvPosition.xyz;
 
-	#include <worldpos_vertex>
-	#include <shadowmap_vertex>
-	#include <fog_vertex>
+    #include <worldpos_vertex>
+    #include <shadowmap_vertex>
+    #include <fog_vertex>
 #endif //AS_PHYSICAL
 #ifdef AS_DISTANCE
     #include <morphtarget_vertex>
-	#include <skinning_vertex>
-	#include <displacementmap_vertex>
-	#include <project_vertex>
-	#include <worldpos_vertex>
-	#include <clipping_planes_vertex>
+    #include <skinning_vertex>
+    #include <displacementmap_vertex>
+    #include <project_vertex>
+    #include <worldpos_vertex>
+    #include <clipping_planes_vertex>
 
-	vWorldPosition = worldPosition.xyz;
+    vWorldPosition = worldPosition.xyz;
 #endif //AS_DISTANCE
 #ifdef AS_DEPTH
-	#include <morphtarget_vertex>
-	#include <skinning_vertex>
-	#include <displacementmap_vertex>
-	#include <project_vertex>
-	#include <logdepthbuf_vertex>
-	#include <clipping_planes_vertex>
+    #include <morphtarget_vertex>
+    #include <skinning_vertex>
+    #include <displacementmap_vertex>
+    #include <project_vertex>
+    #include <logdepthbuf_vertex>
+    #include <clipping_planes_vertex>
 #endif //AS_DEPTH
 }
