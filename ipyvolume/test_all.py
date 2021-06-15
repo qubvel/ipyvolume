@@ -452,16 +452,6 @@ def test_datasets():
     ipyvolume.datasets.zeldovich.fetch()
 
 
-def test_mesh_material():
-    x = [0, 1]
-    scatter = ipv.scatter(x, x, x)
-    assert isinstance(scatter.material, pythreejs.ShaderMaterial)
-    scatter = ipv.scatter(x, x, x, lighting_model='PHYSICAL')
-    assert isinstance(scatter.material, pythreejs.MeshPhysicalMaterial)
-    # TODO: test passed parameters and PHONG/LAMBERT
-    # TODO: test plot_trisurf
-
-
 def test_light_components():
     ambient = ipyvolume.light_ambient()
     assert ambient.type == 'AmbientLight'
@@ -470,62 +460,14 @@ def test_light_components():
 
     hemisphere = ipyvolume.light_hemisphere()
     assert hemisphere.type == 'HemisphereLight'
-    assert hemisphere.color == 'white'
-    assert hemisphere.groundColor == 'red'
-    assert hemisphere.intensity == 1
-    assert hemisphere.position[0] == 0
-    assert hemisphere.position[1] == 1
-    assert hemisphere.position[2] == 0
+    assert hemisphere.color == '#ffffbb'
+    assert hemisphere.groundColor == '#080820'
 
     directional = ipyvolume.light_directional()
     assert directional.color == 'white'
-    assert directional.intensity == 1
-    assert directional.position[0] == 10
-    assert directional.position[1] == 10
-    assert directional.position[2] == 10
-    assert directional.target.position[0] == 0
-    assert directional.target.position[1] == 0
-    assert directional.target.position[2] == 0
-    assert directional.castShadow is True
-    assert directional.shadow.bias == -0.0008
-    assert directional.shadow.radius == 1
-    assert directional.shadow.camera.near == 0.1
-    assert directional.shadow.camera.far == 100
-    assert directional.shadow.mapSize[0] == 1024
-    assert directional.shadow.camera.left == -10 / 2
-    assert directional.shadow.camera.right == 10 / 2
-    assert directional.shadow.camera.top == 10 / 2
-    assert directional.shadow.camera.bottom == -10 / 2
 
     spot = ipyvolume.light_spot()
     assert spot.color == 'white'
-    assert spot.intensity == 1
-    assert spot.position[0] == 10
-    assert spot.position[1] == 10
-    assert spot.position[2] == 10
-    assert spot.target.position[0] == 0
-    assert spot.target.position[1] == 0
-    assert spot.target.position[2] == 0
-    assert spot.shadow.camera.fov == 90
-    assert spot.castShadow is True
-    assert spot.shadow.mapSize[0] == 1024
-    assert spot.shadow.bias == -0.0008
-    assert spot.shadow.radius == 1
-    assert spot.shadow.camera.near == 0.5
-    assert spot.shadow.camera.far == 5000
 
     point = ipyvolume.light_point()
     assert point.color == 'white'
-    assert point.intensity == 1
-    assert point.position[0] == 10
-    assert point.position[1] == 10
-    assert point.position[2] == 10
-    assert point.shadow.camera.fov == 90
-    assert point.castShadow is True
-    assert point.distance == 0
-    assert point.decay == 1
-    assert point.shadow.mapSize[0] == 1024
-    assert point.shadow.bias == -0.0008
-    assert point.shadow.radius == 1
-    assert point.shadow.camera.near == 0.1
-    assert point.shadow.camera.far == 100
