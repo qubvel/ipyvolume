@@ -7,7 +7,6 @@ import contextlib
 
 import numpy as np
 import pytest
-import pythreejs
 
 import ipyvolume
 import ipyvolume.pylab as p3
