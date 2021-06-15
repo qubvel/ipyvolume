@@ -21,10 +21,10 @@ class ScatterView extends widgets.WidgetView {
     texture_loader: THREE.TextureLoader;
     textures: any;
     uniforms: any;
-    geos: { diamond: THREE.SphereGeometry; box: THREE.BoxGeometry; arrow: THREE.CylinderGeometry;
-        cylinder: THREE.CylinderGeometry; cylinder_hr: THREE.CylinderGeometry; sphere: THREE.SphereGeometry;
-        cat: THREE.Geometry; square_2d: THREE.PlaneGeometry; point_2d: THREE.PlaneGeometry; circle_2d: THREE.CircleGeometry;
-        triangle_2d: THREE.CircleGeometry; };
+    geos: { diamond: THREE.BufferGeometry; box: THREE.BufferGeometry; arrow: THREE.BufferGeometry;
+        cylinder: THREE.BufferGeometry; cylinder_hr: THREE.BufferGeometry; sphere: THREE.SphereBufferGeometry;
+        cat: THREE.BufferGeometry; square_2d: THREE.BufferGeometry; point_2d: THREE.BufferGeometry; circle_2d: THREE.BufferGeometry;
+        triangle_2d: THREE.BufferGeometry; };
     material: any;
     material_rgb: any;
     material_depth: any;
@@ -50,7 +50,7 @@ class ScatterView extends widgets.WidgetView {
         }
 
         const geo_diamond = new THREE.SphereGeometry(1, 2, 2);
-        const geo_sphere = new THREE.SphereGeometry(0.5, 12, 12);
+        const geo_sphere = new THREE.SphereBufferGeometry(0.5, 12, 12);
         const geo_box = new THREE.BoxGeometry(1, 1, 1);
         const geo_cat = new THREE.Geometry();
         for (const vertex of cat_data.vertices) {
@@ -83,21 +83,21 @@ class ScatterView extends widgets.WidgetView {
         const geo_circle_2d = new THREE.CircleGeometry(1, 32, Math.PI / 2);
 
         // this.geo = new THREE.ConeGeometry(0.2, 1)
-        const geo_arrow = new THREE.CylinderGeometry(0, 0.2, 1);
+        const geo_arrow = new THREE.CylinderBufferGeometry(0, 0.2, 1);
         const geo_cylinder = new THREE.CylinderGeometry(0.5, 0.5, 1.0);
         const geo_cylinder_hr = new THREE.CylinderGeometry(0.5, 0.5, 1.0, 100);
         this.geos = {
-            diamond: geo_diamond,
-            box: geo_box,
+            diamond: new THREE.BufferGeometry().fromGeometry(geo_diamond),
+            box: new THREE.BufferGeometry().fromGeometry(geo_box),
             arrow: geo_arrow,
-            cylinder: geo_cylinder,
-            cylinder_hr: geo_cylinder_hr,
+            cylinder: new THREE.BufferGeometry().fromGeometry(geo_cylinder),
+            cylinder_hr: new THREE.BufferGeometry().fromGeometry(geo_cylinder_hr),
             sphere: geo_sphere,
-            cat: geo_cat,
-            square_2d: geo_square_2d,
-            point_2d: geo_point_2d,
-            circle_2d: geo_circle_2d,
-            triangle_2d: geo_triangle_2d,
+            cat: new THREE.BufferGeometry().fromGeometry(geo_cat),
+            square_2d: new THREE.BufferGeometry().fromGeometry(geo_square_2d),
+            point_2d: new THREE.BufferGeometry().fromGeometry(geo_point_2d),
+            circle_2d: new THREE.BufferGeometry().fromGeometry(geo_circle_2d),
+            triangle_2d: new THREE.BufferGeometry().fromGeometry(geo_triangle_2d),
         };
 
         this.uniforms = {
@@ -222,7 +222,8 @@ class ScatterView extends widgets.WidgetView {
             this.model.on(`change:${name}_scale`, updater, this);
         });
 
-        this.model.on("change:material change:cast_shadow change:receive_shadow", this._update_materials, this);
+        this.model.on("change:material", this._update_materials, this);
+        this.model.on("change:cast_shadow change:receive_shadow", this.update_, this);
     }
 
     _load_textures() {
@@ -480,11 +481,15 @@ class ScatterView extends widgets.WidgetView {
             geo = "diamond";
         }
         const sprite = geo.endsWith("2d");
-        const buffer_geo = new THREE.BufferGeometry().fromGeometry(this.geos[geo]);
+        const buffer_geo = this.geos[geo];//geo);
         const instanced_geo = new THREE.InstancedBufferGeometry();
 
         const vertices = (buffer_geo.attributes.position as any).clone();
         instanced_geo.addAttribute("position", vertices);
+        if(buffer_geo.index) {
+            instanced_geo.index = buffer_geo.index;
+        }
+        instanced_geo.computeVertexNormals();
 
         const sequence_index = this.model.get("sequence_index");
         let sequence_index_previous = this.previous_values.sequence_index;
@@ -550,7 +555,6 @@ class ScatterView extends widgets.WidgetView {
                 this.material.uniforms.texture_previous.value = this.textures[sequence_index_previous % this.textures.length];
             }
         }
-        instanced_geo.computeVertexNormals();
         this.mesh = new THREE.Mesh(instanced_geo, this.material);
         this.mesh.castShadow = this.model.get("cast_shadow");
         this.mesh.receiveShadow = this.model.get("receive_shadow");
