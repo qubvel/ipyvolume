@@ -132,7 +132,8 @@ _doc_snippets["z2d"] = "idem for z"
 _doc_snippets["texture"] = "PIL.Image object or ipywebrtc.MediaStream (can be a seqence)"
 _doc_snippets['cast_shadow'] = 'If this object casts a shadown on other options (default) or not. Works only with Directional, Point and Spot lights.'
 _doc_snippets['receive_shadow'] = 'If this objects receives shadows (default) or not. Works only with Directional, Point and Spot lights.'
-_doc_snippets['opacity'] = "Float in the range of 0.0 - 1.0 indicating how transparent the material is. A value of 0.0 indicates fully transparent, 1.0 is fully opaque. If the material's transparent property is not set to true, the material will remain fully opaque and this value will only affect its color."
+_doc_snippets['opacity'] = "Float in the range of 0.0 - 1.0 indicating how transparent the material is. A value of 0.0 indicates fully transparent, 1.0 is fully opaque."\
+    "If the material's transparent property is not set to true, the material will remain fully opaque and this value will only affect its color."
 _doc_snippets['transparent'] = "Defines whether this material is transparent. (NOTE: might not always render correctly, see the topic of order independant transparancy)"
 
 emissive_intensity_default = 0.2
