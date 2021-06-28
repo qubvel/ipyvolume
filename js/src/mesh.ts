@@ -157,7 +157,7 @@ class MeshView extends widgets.WidgetView {
 
     add_to_scene() {
         this.meshes.forEach((mesh) => {
-            this.renderer.scene_scatter.add(mesh);
+            this.renderer.scene.add(mesh);
         });
     }
 
@@ -171,7 +171,7 @@ class MeshView extends widgets.WidgetView {
 
     remove_from_scene() {
         this.meshes.forEach((mesh) => {
-            this.renderer.scene_scatter.remove(mesh);
+            this.renderer.scene.remove(mesh);
             mesh.geometry.dispose();
         });
     }

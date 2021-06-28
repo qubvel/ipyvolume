@@ -264,19 +264,19 @@ class ScatterView extends widgets.WidgetView {
         }
     }
     add_to_scene() {
-        this.renderer.scene_scatter.add(this.mesh);
+        this.renderer.scene.add(this.mesh);
         if (this.line_segments) {
-            this.renderer.scene_scatter.add(this.line_segments);
+            this.renderer.scene.add(this.line_segments);
         }
     }
     remove_from_scene() {
-        if (this.renderer.scene_scatter.children.indexOf(this.mesh) === -1) {
+        if (this.renderer.scene.children.indexOf(this.mesh) === -1) {
             console.warn("trying to removing scatter mesh from scene that does not include it");
         }
-        this.renderer.scene_scatter.remove(this.mesh);
+        this.renderer.scene.remove(this.mesh);
         this.mesh.geometry.dispose();
         if (this.line_segments) {
-            this.renderer.scene_scatter.remove(this.line_segments);
+            this.renderer.scene.remove(this.line_segments);
             this.line_segments.geometry.dispose();
         }
     }

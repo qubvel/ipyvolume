@@ -69,6 +69,8 @@ class VolumeView extends widgets.WidgetView {
             side: THREE.BackSide,
         });
         this.vol_box_mesh = new THREE.Mesh(this.vol_box_geo, this.box_material);
+        //@ts-ignore
+        this.vol_box_mesh.isVolume = true;
         // this.vol_box_mesh.position.z = -5;
         this.vol_box_mesh.updateMatrix();
         this.vol_box_mesh.matrixAutoUpdate = true;
@@ -288,11 +290,11 @@ class VolumeView extends widgets.WidgetView {
     }
 
     add_to_scene() {
-        this.renderer.scene_volume.add(this.vol_box_mesh);
+        this.renderer.scene.add(this.vol_box_mesh);
     }
 
     remove_from_scene() {
-        this.renderer.scene_volume.remove(this.vol_box_mesh);
+        this.renderer.scene.remove(this.vol_box_mesh);
     }
 }
 

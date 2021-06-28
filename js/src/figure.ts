@@ -205,9 +205,7 @@ class FigureView extends widgets.DOMWidgetView {
     axes_data: Array<{ name: string; label: string; object: any; object_label: any; translate: number[];
         rotate: number[]; rotation_order: string; fillStyle: string; }>;
     ticks: number;
-    scene_volume: THREE.Scene;
-    shared_scene: any;
-    scene_scatter: THREE.Scene;
+    scene: THREE.Scene;
     scene_opaque: THREE.Scene;
     mesh_views: { [key: string]: MeshView };
     scatter_views: { [key: string]: ScatterView };
@@ -640,25 +638,27 @@ class FigureView extends widgets.DOMWidgetView {
 
         this.ticks = 5; // hardcoded for now
 
-        // we have our 'private' scene, if we use the real scene, it gives buggy
-        // results in the volume rendering when we have two views
-        this.scene_volume = new THREE.Scene();
+        this.scene = this.model.get("scene").obj;
+        // // we have our 'private' scene, if we use the real scene, it gives buggy
+        // // results in the volume rendering when we have two views
+        // this.scene_volume = new THREE.Scene();
         // could be removed when https://github.com/jovyan/pythreejs/issues/176 is solved
         // the default for pythreejs is white, which leads the volume rendering pass to make everything white
-        this.scene_volume.background = null;
+        this.scene.background = null;
+        this.model.get("scene").on("rerender", () => this.update());
 
-        if (this.model.get("scene")) {
-            this.shared_scene = this.model.get("scene").obj;
-            this.model.get("scene").on("rerender", () => this.update());
-        } else {
-            this.shared_scene = new THREE.Scene();
-        }
+        // if (this.model.get("scene")) {
+        //     this.shared_scene = this.model.get("scene").obj;
+        //     this.model.get("scene").on("rerender", () => this.update());
+        // } else {
+        //     this.shared_scene = new THREE.Scene();
+        // }
 
-        this.scene_volume.add(this.camera);
+        this.scene.add(this.camera);
         // the threejs animation system looks at the parent of the camera and sends rerender msg'es
-        this.shared_scene.add(this.camera);
+        // this.shared_scene.add(this.camera);
 
-        this.scene_scatter = new THREE.Scene();
+        // this.scene_scatter = new THREE.Scene();
         this.scene_opaque = new THREE.Scene();
 
         this.scene_opaque.add(this.wire_box);
@@ -996,7 +996,7 @@ class FigureView extends widgets.DOMWidgetView {
         const update_center = () => {
             // WARNING: we cheat a little by setting the scene positions (hence the minus) since it is
             // easier, might get us in trouble later?
-            for (const scene of [this.scene_volume, this.scene_opaque, this.scene_scatter]) {
+            for (const scene of [this.scene, this.scene_opaque]) {
                 const pos = this.model.get("camera_center");
                 scene.position.set(-pos[0], -pos[1], -pos[2]);
             }
@@ -1008,6 +1008,7 @@ class FigureView extends widgets.DOMWidgetView {
 
         this.model.on("change:tf", this.tf_set, this);
         this.listenTo(this.model, "msg:custom", this.custom_msg.bind(this));
+
 
         this.renderer.domElement.addEventListener("resize", this.on_canvas_resize.bind(this), false);
         this.update();
@@ -1647,9 +1648,9 @@ class FigureView extends widgets.DOMWidgetView {
     async update_lights() {
         if(this.model.previous('lights')) {
             // Remove previous lights
-            this.model.previous('lights').forEach(light => {
-                this.scene_scatter.remove(light.obj);
-                this.scene_volume.remove(light.obj);
+            this.model.previous('lights').forEach(light_model => {
+                const light = light_model.obj;
+                this.scene.remove(light);
             });
         }
         
@@ -1664,14 +1665,11 @@ class FigureView extends widgets.DOMWidgetView {
                 if (light.castShadow) {
                     this.update_shadows();
                 }
-
                 this.update();
             }
             light_model.on("change", on_light_change);
             light_model.on("childchange", on_light_change);
-            this.scene_scatter.add(light);
-            this.scene_volume.add(light);
-
+            this.scene.add(light);
         });
         this.update();
     }
@@ -1690,7 +1688,7 @@ class FigureView extends widgets.DOMWidgetView {
     }
 
     on_orientationchange(e) {
-        for (const scene of [this.scene_volume, this.scene_opaque, this.scene_scatter]) {
+        for (const scene of [this.scene, this.scene_opaque]) {
             scene.rotation.reorder("XYZ");
             scene.rotation.x = (e.gamma * Math.PI / 180 + Math.PI * 2);
             scene.rotation.y = -(e.beta * Math.PI / 180 + Math.PI * 2);
@@ -1945,7 +1943,7 @@ class FigureView extends widgets.DOMWidgetView {
             this.update();
         }
         if (this.model.get("scene")) {
-            this.model.get("scene").trigger("afterRender", this.scene_volume, this.renderer, this.camera);
+            this.model.get("scene").trigger("afterRender", this.scene, this.renderer, this.camera);
         }
     }
 
@@ -1981,6 +1979,27 @@ class FigureView extends widgets.DOMWidgetView {
         this.camera.updateMatrixWorld();
         const has_volumes = this.model.get("volumes").length !== 0;
         const panorama = this.model.get("panorama_mode") !== "no";
+        // record who is visible
+        const wasVisible = this.scene.children.reduce((map, o) => {
+            map[o.id] = o.visible
+            return map;
+        }, {});
+        const setVisible = ({volumes}) => {
+            this.scene.children.forEach((o) => {
+                if(volumes) {
+                    //@ts-ignore
+                    o.visible = Boolean(o.isVolume) || Boolean(o.isLight) || Boolean(o.isCamera)
+                } else {
+                   //@ts-ignore
+                   o.visible = !Boolean(o.isVolume)
+                }
+            })
+        };
+        const restoreVisible = () => {
+            this.scene.children.forEach((o) => {
+                o.visible = wasVisible[o.id];
+            });
+        };
 
         // set material to rgb
         for (const scatter_view of Object.values(this.scatter_views)) {
@@ -2015,7 +2034,7 @@ class FigureView extends widgets.DOMWidgetView {
                 this.cube_camera.lookAt(focal_point);
             }
 
-            this.cube_camera.update(this.renderer, this.scene_scatter);
+            this.cube_camera.update(this.renderer, this.scene); // TODO: but do we render volumes?
             this.cube_camera.update(this.renderer, this.scene_opaque);
             // TODO: typescript seems to disagree with types here
             (this.screen_texture as any) = this.cube_camera.renderTarget;
@@ -2037,14 +2056,16 @@ class FigureView extends widgets.DOMWidgetView {
             }
             this.renderer.setRenderTarget(this.volume_back_target);
             this.renderer.clear(true, true, true);
-            this.renderer.render(this.scene_volume, camera, this.volume_back_target);
+            setVisible({volumes: true});
+            this.renderer.render(this.scene, camera, this.volume_back_target);
             this.renderer.state.buffers.depth.setClear(1);
 
             // Color and depth render pass for volume rendering
             this.renderer.autoClear = false;
             this.renderer.setRenderTarget(this.geometry_depth_target);
             this.renderer.clear(true, true, true);
-            this.renderer.render(this.scene_scatter, camera, this.geometry_depth_target);
+            setVisible({volumes: false});
+            this.renderer.render(this.scene, camera, this.geometry_depth_target);
             this.renderer.render(this.scene_opaque, camera, this.geometry_depth_target);
             this.renderer.autoClear = true;
 
@@ -2054,7 +2075,8 @@ class FigureView extends widgets.DOMWidgetView {
         this.renderer.autoClear = false;
         this.renderer.setRenderTarget(this.color_pass_target);
         this.renderer.clear(true, true, true);
-        this.renderer.render(this.scene_scatter, camera, this.color_pass_target);
+        setVisible({volumes: false});
+        this.renderer.render(this.scene, camera, this.color_pass_target);
         this.renderer.render(this.scene_opaque, camera, this.color_pass_target);
         this.renderer.autoClear = true;
 
@@ -2070,7 +2092,8 @@ class FigureView extends widgets.DOMWidgetView {
             this.renderer.autoClear = false;
             this.renderer.setRenderTarget(this.color_pass_target);
             this.renderer.clear(false, true, false);
-            this.renderer.render(this.scene_volume, camera, this.color_pass_target);
+            setVisible({volumes: true});
+            this.renderer.render(this.scene, camera, this.color_pass_target);
             this.renderer.autoClear = true;
             this.renderer.context.colorMask(true, true, true, true);
 
@@ -2084,7 +2107,8 @@ class FigureView extends widgets.DOMWidgetView {
             this.renderer.setRenderTarget(this.color_pass_target);
             // threejs does not want to be called with all three false
             // this.renderer.clear(false, false, false);
-            this.renderer.render(this.scene_volume, camera, this.color_pass_target);
+            setVisible({volumes: true});
+            this.renderer.render(this.scene, camera, this.color_pass_target);
             this.renderer.autoClear = true;
         }
 
@@ -2103,7 +2127,8 @@ class FigureView extends widgets.DOMWidgetView {
         this.renderer.setClearAlpha(0);
         this.renderer.setRenderTarget(this.coordinate_target);
         this.renderer.clear(true, true, true);
-        this.renderer.render(this.scene_scatter, camera, this.coordinate_target);
+        setVisible({volumes: false});
+        this.renderer.render(this.scene, camera, this.coordinate_target);
         this.renderer.autoClear = true;
 
         // now we render the weighted coordinate for the volumetric data
@@ -2120,7 +2145,8 @@ class FigureView extends widgets.DOMWidgetView {
             this.renderer.autoClear = false;
             this.renderer.setRenderTarget(this.color_pass_target);
             this.renderer.clear(false, true, false);
-            this.renderer.render(this.scene_volume, camera, this.color_pass_target);
+            setVisible({volumes: true});
+            this.renderer.render(this.scene, camera, this.color_pass_target);
             this.renderer.autoClear = true;
             this.renderer.context.colorMask(true, true, true, true);
 
@@ -2134,7 +2160,8 @@ class FigureView extends widgets.DOMWidgetView {
             this.renderer.setRenderTarget(this.color_pass_target);
             // threejs does not want to be called with all three false
             // this.renderer.clear(false, false, false);
-            this.renderer.render(this.scene_volume, camera, this.coordinate_target);
+            setVisible({volumes: true});
+            this.renderer.render(this.scene, camera, this.coordinate_target);
             this.renderer.autoClear = true;
 
         }
@@ -2162,6 +2189,7 @@ class FigureView extends widgets.DOMWidgetView {
         this.renderer.setRenderTarget(null);
         this.renderer.clear(true, true, true);
         this.renderer.render(this.screen_scene, this.screen_camera);
+        restoreVisible();
     }
 
     rebuild_multivolume_rendering_material() {
