@@ -235,6 +235,14 @@ class Volume(widgets.Widget):
     def _listen_to(self, fig):
         fig.observe(self.update_data, ['xlim', 'ylim', 'zlim'])
 
+    material = traitlets.Union([
+        traitlets.Instance(pythreejs.MeshPhongMaterial),
+    ], help='A :any:`pythreejs.MeshPhongMaterial` that is used for the shading of the volume').tag(sync=True, **widgets.widget_serialization)
+
+    @traitlets.default('material')
+    def _default_material(self):
+        return pythreejs.MeshPhongMaterial()
+
     @debounced(method=True)
     def update_data(self, change=None):
         self._update_data()

@@ -895,6 +895,29 @@ class FigureView extends widgets.DOMWidgetView {
             side: THREE.FrontSide,
         });
 
+        // make the material behave as phong
+        this.material_multivolume.uniforms = {...THREE.UniformsUtils.merge( [
+			THREE.UniformsLib.common,
+			THREE.UniformsLib.specularmap,
+			THREE.UniformsLib.envmap,
+			THREE.UniformsLib.aomap,
+			THREE.UniformsLib.lightmap,
+			THREE.UniformsLib.emissivemap,
+			THREE.UniformsLib.bumpmap,
+			THREE.UniformsLib.normalmap,
+			THREE.UniformsLib.displacementmap,
+			THREE.UniformsLib.gradientmap,
+			THREE.UniformsLib.fog,
+			THREE.UniformsLib.lights,
+			{
+                // there are not used, since they are defined per volume in volr-fragment Volume struct
+				emissive: { value: new THREE.Color( 0x000000 ) },
+				specular: { value: new THREE.Color( 0x111111 ) },
+				shininess: { value: 30 }
+			},
+		]), ...this.material_multivolume.uniforms}
+        // make sure we don't pass our uniforms to THREE, we don't want a deep clone
+
         // a clone of the box_material_volr, with a different define (faster to render)
         this.material_multivolume_depth = new THREE.ShaderMaterial({
             uniforms: this.material_multivolume.uniforms,
@@ -1622,58 +1645,35 @@ class FigureView extends widgets.DOMWidgetView {
     }
 
     async update_lights() {
-
-        // Initialize lights if this is the first pass
-        if (!this.lights) {
-            this.lights = {}
-        }
-
-        const lights = this.model.get("lights");
-        if (lights.length !== 0) { // So now check if list has length 0
-            // Change mesh lighting model
-            const current_light_cids = [];
-            lights.forEach(async (light_model) => {
-                if (!(light_model.cid in this.lights)) {
-                    const light = light_model.obj;
-                    if (light.castShadow) {
-                        this.update_shadows();
-                    }
-
-                    const on_light_change = () => {
-                        if (light.castShadow) {
-                            this.update_shadows();
-                        }
-
-                        this.update();
-                    }
-
-                    light_model.on("change", on_light_change);
-                    light_model.on("childchange", on_light_change);
-
-                    this.lights[light_model.cid] = light;
-
-                    if (light.target) {
-                        this.scene_scatter.add(light.target);
-                    }
-                    this.scene_scatter.add(light);
-                }
-
-                // Do not delete current lights
-                current_light_cids.push(light_model.cid);
-            });
-
+        if(this.model.previous('lights')) {
             // Remove previous lights
-            for (const cid of Object.keys(this.lights)) {
-                const light = this.lights[cid];
-
-                if (current_light_cids.indexOf(cid) === -1) {
-                    this.scene_scatter.remove(light);
-                    delete this.lights[cid];
-                }
+            this.model.previous('lights').forEach(light => {
+                this.scene_scatter.remove(light.obj);
+                this.scene_volume.remove(light.obj);
+            });
+        }
+        
+        const lights = this.model.get("lights");
+        lights.forEach(light_model => {
+            const light = light_model.obj;
+            if (light.castShadow) {
+                this.update_shadows();
             }
 
-            this.update();
-        }
+            const on_light_change = () => {
+                if (light.castShadow) {
+                    this.update_shadows();
+                }
+
+                this.update();
+            }
+            light_model.on("change", on_light_change);
+            light_model.on("childchange", on_light_change);
+            this.scene_scatter.add(light);
+            this.scene_volume.add(light);
+
+        });
+        this.update();
     }
 
     update_shadows() {
@@ -2206,6 +2206,7 @@ class FigureView extends widgets.DOMWidgetView {
         }
         material.defines.VOLUME_COUNT = count_normal;
         material.defines.VOLUME_COUNT_MAX_INT = count_max_int;
+        material.lights = true;
         material_depth.defines.VOLUME_COUNT = count_normal;
         material_depth.defines.VOLUME_COUNT_MAX_INT = count_max_int;
 
