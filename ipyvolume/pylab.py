@@ -309,7 +309,7 @@ default_size_selected = default_size * 1.3
 
 
 @_docsubst
-def plot_trisurf(x, y, z, triangles=None, lines=None, color=default_color, u=None, v=None, texture=None):
+def plot_trisurf(x, y, z, triangles=None, lines=None, color=default_color, u=None, v=None, texture=None, wireframe=False):
     """Draw a polygon/triangle mesh defined by a coordinate and triangle indices.
 
     The following example plots a rectangle in the z==2 plane, consisting of 2 triangles:
@@ -344,7 +344,7 @@ def plot_trisurf(x, y, z, triangles=None, lines=None, color=default_color, u=Non
         triangles = np.array(triangles).astype(dtype=np.uint32)
     if lines is not None:
         lines = np.array(lines).astype(dtype=np.uint32)
-    mesh = ipv.Mesh(x=x, y=y, z=z, triangles=triangles, lines=lines, color=color, u=u, v=v, texture=texture)
+    mesh = ipv.Mesh(x=x, y=y, z=z, triangles=triangles, lines=lines, color=color, u=u, v=v, texture=texture, wireframe=wireframe)
     _grow_limits(np.array(x).reshape(-1), np.array(y).reshape(-1), np.array(z).reshape(-1))
     fig.meshes = fig.meshes + [mesh]
     return mesh
@@ -722,7 +722,7 @@ def transfer_function(
     return tf
 
 
-def plot_isosurface(data, level=None, color=default_color, wireframe=True, surface=True, controls=True, extent=None):
+def plot_isosurface(data, level=None, color=default_color, wireframe=False, controls=False, extent=None):
     """Plot a surface at constant value (like a 2d contour).
 
     :param data: 3d numpy array
@@ -755,7 +755,7 @@ def plot_isosurface(data, level=None, color=default_color, wireframe=True, surfa
         z = z * np.diff(zlim) / (data.shape[2] - 1) + zlim[0]
         _grow_limits(*extent)
 
-    mesh = plot_trisurf(x, y, z, triangles=triangles, color=color)
+    mesh = plot_trisurf(x, y, z, triangles=triangles, color=color, wireframe=wireframe)
     if controls:
         vmin, vmax = np.percentile(data, 1), np.percentile(data, 99)
         step = (vmax - vmin) / 250

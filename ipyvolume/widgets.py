@@ -84,7 +84,7 @@ class Mesh(widgets.Widget):
 
     @traitlets.default('material')
     def _default_material(self):
-        return pythreejs.ShaderMaterial(side=pythreejs.enums.Side.DoubleSide)
+        return pythreejs.ShaderMaterial(side=pythreejs.enums.Side.DoubleSide, wireframe=self._wireframe)
 
     line_material = traitlets.Instance(
         pythreejs.ShaderMaterial, help='A :any:`pythreejs.ShaderMaterial` that is used for the lines/wireframe'
@@ -93,6 +93,10 @@ class Mesh(widgets.Widget):
     @traitlets.default('line_material')
     def _default_line_material(self):
         return pythreejs.ShaderMaterial()
+
+    def __init__(self, *args, **kwargs):
+        self._wireframe = kwargs.pop("wireframe", False)
+        super().__init__(*args, **kwargs)
 
 
 @widgets.register
